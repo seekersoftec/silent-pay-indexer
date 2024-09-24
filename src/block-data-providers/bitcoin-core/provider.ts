@@ -28,6 +28,7 @@ import {
 import { AxiosRequestConfig } from 'axios';
 import * as currency from 'currency.js';
 import { AxiosRetryConfig, makeRequest } from '@/common/request';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class BitcoinCoreProvider
@@ -44,6 +45,7 @@ export class BitcoinCoreProvider
         private readonly configService: ConfigService,
         indexerService: IndexerService,
         operationStateService: OperationStateService,
+        private eventEmitter: EventEmitter2,
     ) {
         super(indexerService, operationStateService);
 
@@ -122,6 +124,7 @@ export class BitcoinCoreProvider
                 }
 
                 state.indexedBlockHeight = height;
+                this.eventEmitter.emit('blockIndexed', height);
                 await this.setState(state);
             }
         } finally {
