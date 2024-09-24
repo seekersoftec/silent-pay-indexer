@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
     WebSocketGateway,
     WebSocketServer,
@@ -7,11 +7,13 @@ import {
 } from '@nestjs/websockets';
 import { Server, WebSocket } from 'ws';
 
+@Injectable()
 @WebSocketGateway()
 export class SilentBlocksGateway
     implements OnGatewayConnection, OnGatewayDisconnect
 {
     private readonly logger = new Logger(SilentBlocksGateway.name);
+
 
     @WebSocketServer() server: Server;
 
@@ -25,6 +27,8 @@ export class SilentBlocksGateway
         this.logger.log(`Client disconnected: ${remoteAddress}`);
     }
 
+
+    
     // Method to broadcast silent block to all connected clients
     broadcastSilentBlock(silentBlock: Buffer) {
         this.server.clients.forEach((client: WebSocket) => {

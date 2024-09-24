@@ -1,6 +1,5 @@
 import { OperationStateService } from '@/operation-state/operation-state.service';
 import { Logger } from '@nestjs/common';
-import { EventEmitter } from 'events';
 import {
     IndexerService,
     TransactionInput,
@@ -8,7 +7,6 @@ import {
 } from '@/indexer/indexer.service';
 
 export abstract class BaseBlockDataProvider<OperationState> {
-    protected readonly eventEmitter: EventEmitter = new EventEmitter();
     protected abstract readonly logger: Logger;
     protected abstract readonly operationStateKey: string;
 
@@ -16,12 +14,6 @@ export abstract class BaseBlockDataProvider<OperationState> {
         private readonly indexerService: IndexerService,
         private readonly operationStateService: OperationStateService,
     ) {}
-
-    onBlockIndexed(
-        listener: (data: { blockHeight: number; blockHash: string }) => void,
-    ): void {
-        this.eventEmitter.on('blockIndexed', listener);
-    }
 
     async indexTransaction(
         txid: string,
@@ -37,7 +29,6 @@ export abstract class BaseBlockDataProvider<OperationState> {
             blockHeight,
             blockHash,
         );
-        this.eventEmitter.emit('blockIndexed', { blockHeight, blockHash });
     }
 
     async getState(): Promise<OperationState> {
