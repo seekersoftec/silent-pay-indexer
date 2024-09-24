@@ -1,12 +1,31 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Transaction } from '@/transactions/transaction.entity';
 import { TransactionsService } from '@/transactions/transactions.service';
 import { SILENT_PAYMENT_BLOCK_TYPE } from '@/common/constants';
 import { encodeVarInt, varIntSize } from '@/common/common';
+import { OperationState } from '@/operation-state/operation-state.entity';
+import { BaseBlockDataProvider } from '@/block-data-providers/base-block-data-provider.abstract';
+import { SilentBlocksGateway } from './silent-blocks.gateway';
 
 @Injectable()
 export class SilentBlocksService {
-    constructor(private readonly transactionsService: TransactionsService) {}
+    private readonly logger = new Logger(SilentBlocksService.name);
+    constructor(
+        private readonly transactionsService: TransactionsService,
+        private readonly silentBlocksGateway: SilentBlocksGateway,
+        private readonly blockDataProvider: BaseBlockDataProvider<OperationState>,
+    ) {
+        // Subscribe to the blockIndexed event
+        this.blockDataProvider.onBlockIndexed(
+            async ({ blockHeight, blockHash }) => {
+                this.logger.log(
+                    `New block indexed: ${blockHeight} (${blockHash})`,
+                );
+                const silentBlock = await this.getSilentBlockByHash(blockHash);
+                this.silentBlocksGateway.broadcastSilentBlock(silentBlock);
+            },
+        );
+    }
 
     private getSilentBlockLength(transactions: Transaction[]): number {
         let length = 1 + varIntSize(transactions.length); // 1 byte for type + varint for transactions count
